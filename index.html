@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 核心：适配朋友圈分享标题，随文案动态更新 -->
+  <title>北科大人认证考试</title>
+  <style>
+    *{box-sizing:border-box;}
+    body{background:#f5f5f5;margin:0;padding:15px;font-family:system-ui;}
+    .main{max-width:400px;margin:auto;padding-bottom:50px;}
+    .card{background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);padding:20px;text-align:center;margin-bottom:15px;}
+    .btn{background:#8B0000;color:white;border:none;padding:12px;border-radius:8px;width:100%;font-weight:bold;margin-top:10px;cursor:pointer;}
+    /* 答案按钮样式-醒目红，和北科红呼应 */
+    .answer-btn{
+      background: #8B0000;
+      color: white;
+      border:none;
+      padding:14px;
+      border-radius:10px;
+      width:100%;
+      font-weight:bold;
+      font-size:16px;
+      cursor:pointer;
+      margin:20px 0;
+      box-shadow: 0 3px 8px rgba(139,0,0,0.3);
+    }
+    .answer-btn:hover{
+      background: #a80000;
+    }
+  </style>
+</head>
+<body>
+<div class="main">
+  <!-- 封面 -->
+  <div id="cover" class="card">
+    <div style="color:#8B0000;font-size:36px;margin-bottom:10px;">🎓</div>
+    <h1 style="color:#8B0000;margin:0 0 5px;">北科大人认证考试</h1>
+    <p style="color:#666;margin:0 0 15px;">测测你是不是正宗的北科大人</p>
+    <button class="btn" onclick="start()">开始考试</button>
+  </div>
+
+  <!-- 考试 -->
+  <div id="exam" style="display:none">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#8B0000;font-weight:bold;">第<span id="num">1</span>题 / 共10题</span>
+        <span>得分：<span id="score">0</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <p id="q" style="text-align:left;font-weight:bold;"></p>
+      <div id="opts" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button class="btn" onclick="next()" id="next" style="display:none">下一题</button>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div id="result" style="display:none">
+    <div class="card">
+      <h2 style="margin:0 0 10px;">考试完成！</h2>
+      <h1 style="color:#8B0000;font-size:40px;margin:0;" id="fs">0</h1>
+      <p style="color:#666;margin:5px 0 15px;">总分：100分</p>
+      
+      <div style="background:#f8ecec;padding:12px;border-radius:8px;margin-bottom:15px;">
+        <p style="font-weight:bold;color:#8B0000;margin:0 0 5px;" id="level"></p>
+        <p style="color:#666;margin:0;" id="tip"></p>
+      </div>
+
+      <div style="border:2px solid #8B0000;padding:10px;border-radius:8px;margin:20px 0;text-align:left">
+        <p style="margin:0;font-weight:bold;">朋友圈分享文案👇</p>
+        <p id="share" style="margin:5px 0;line-height:1.5;"></p>
+        <button onclick="copy()" style="background:#8B0000;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">复制文案</button>
+      </div>
+
+      <!-- ✅ 替换为新微信文章链接：https://mp.weixin.qq.com/s/Vs0IHlkxqvyTja-Qkl1DBA -->
+      <button class="answer-btn" onclick="window.open('https://mp.weixin.qq.com/s/Vs0IHlkxqvyTja-Qkl1DBA','_blank')">
+        👉 点击获取考试答案解析
+      </button>
+
+      <button class="btn" onclick="reset()">重新考试</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 北科大认证考试题库
+  const questions = [
+    {q:"北京科技大学的前身是？",o:["北洋大学","北京钢铁工业学院","清华大学工学院","矿业学院"],a:1},
+    {q:"北京科技大学的校训是？",o:["自强不息 厚德载物","求是创新","求实鼎新","博学笃行"],a:2},
+    {q:"北科大被誉为？",o:["钢铁摇篮","电力黄埔","建筑名校","化工高地"],a:0},
+    {q:"北科大的建校年份是？",o:["1949年","1952年","1978年","1985年"],a:1},
+    {q:"北科大标志性雕塑是？",o:["鼎","钢铁毕业生","求是石","时光塔"],a:1},
+    {q:"北科大位于北京哪个区？",o:["海淀区","西城区","朝阳区","丰台区"],a:0},
+    {q:"以下哪个不是北科大的学院？",o:["冶金学院","材料学院","计算机学院","航空航天学院"],a:3},
+    {q:"北科大的校庆日是？",o:["4月22日","5月4日","7月1日","10月1日"],a:0},
+    {q:"北科大体育馆承办过哪项奥运赛事？",o:["篮球","柔道、跆拳道","足球","游泳"],a:1},
+    {q:"北科大的英文缩写是？",o:["USTB","PKU","THU","BUPT"],a:0}
+  ];
+
+  // 评级体系
+  const levels = [
+    {min:90,name:"北科大骨灰级校友",tip:"对北科的爱刻进DNA，当之无愧的科大人！"},
+    {min:80,name:"北科大资深达人",tip:"知识储备拉满，正宗科大人认证通过！"},
+    {min:70,name:"北科大优秀学子",tip:"非常了解母校，为你点赞！"},
+    {min:60,name:"北科大合格校友",tip:"基础扎实，继续加油！"},
+    {min:0,name:"北科大萌新",tip:"多逛逛校园，了解更多北科故事吧～"}
+  ];
+
+  let cur=0,score=0;
+
+  // 开始考试
+  function start(){
+    document.getElementById('cover').style.display='none';
+    document.getElementById('exam').style.display='block';
+    render();
+  }
+
+  // 渲染题目
+  function render(){
+    const q=questions[cur];
+    document.getElementById('num').innerText=cur+1;
+    document.getElementById('q').innerText=q.q;
+    const opts=document.getElementById('opts');
+    opts.innerHTML='';
+    
+    q.o.forEach((o,i)=>{
+      const b=document.createElement('button');
+      b.innerText=o;
+      b.style.padding='10px';
+      b.style.borderRadius='8px';
+      b.style.border='2px solid #ddd';
+      b.style.background='white';
+      b.style.cursor='pointer';
+      b.onclick=()=>{
+        document.querySelectorAll('#opts button').forEach(btn=>btn.disabled=true);
+        if(i===q.a){
+          score+=10;
+          document.getElementById('score').innerText=score;
+          b.style.background='#e6f7e6';
+          b.style.borderColor='#2ecc71';
+        }else{
+          b.style.background='#ffebee';
+          b.style.borderColor='#e74c3c';
+        }
+        document.getElementById('next').style.display='block';
+      };
+      opts.appendChild(b);
+    });
+    document.getElementById('next').style.display='none';
+  }
+
+  // 下一题
+  function next(){
+    cur++;
+    cur<10?render():showResult();
+  }
+
+  // 显示结果 + 核心：更新页面标题（朋友圈分享读取该标题）
+  function showResult(){
+    document.getElementById('exam').style.display='none';
+    document.getElementById('result').style.display='block';
+    document.getElementById('fs').innerText=score;
+    
+    const lv=levels.find(l=>score>=l.min);
+    document.getElementById('level').innerText=lv.name;
+    document.getElementById('tip').innerText=lv.tip;
+    // 生成朋友圈分享文案
+    const shareText = `北科大人认证考试中我得了${score}分，我是【${lv.name}】`;
+    document.getElementById('share').innerText=shareText;
+    // 关键：更新页面title，微信朋友圈分享时会显示该文案
+    document.title = shareText;
+  }
+
+  // 复制分享文案
+  function copy(){
+    navigator.clipboard.writeText(document.getElementById('share').innerText)
+      .then(()=>alert('文案已复制，快去朋友圈分享吧！'));
+  }
+
+  // 重新考试
+  function reset(){
+    location.reload();
+  }
+</script>
+</body>
+</html>
